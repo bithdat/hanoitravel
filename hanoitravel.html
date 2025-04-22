@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Du Lịch Hà Nội: Khám Phá Thủ Đô Ngàn Năm Văn Hiến</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        /* --- Base and Fonts --- */
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        .font-heading {
+            font-family: 'Playfair Display', serif;
+        }
+        .parallax {
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- Chatbot Widget --- */
+        #chat-widget {
+            position: fixed; bottom: 90px; left:auto; width: 350px; max-width: 90%; height: 450px; top:auto;
+            background-color: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            display: flex; flex-direction: column; overflow: hidden; z-index: 999;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            transform: translateY(20px) scale(0.95); opacity: 0; pointer-events: none;
+        }
+        #chat-widget.visible { transform: translateY(0) scale(1); opacity: 1; pointer-events: auto; }
+        #chat-header { background-color: #DC2626; color: white; padding: 12px 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 15px; border-top-right-radius: 15px;}
+        #chat-body { flex-grow: 1; padding: 15px; overflow-y: auto; background-color: #f9fafb; display: flex; flex-direction: column; gap: 10px; }
+        .chat-message { padding: 8px 12px; border-radius: 10px; max-width: 80%; word-wrap: break-word; }
+        .user-message { background-color: #3B82F6; color: white; align-self: flex-end; border-bottom-right-radius: 0; }
+        .bot-message { background-color: #E5E7EB; color: #1F2937; align-self: flex-start; border-bottom-left-radius: 0; }
+        #chat-input-container { display: flex; padding: 10px; border-top: 1px solid #E5E7EB; background-color: white; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;}
+        #chat-input { flex-grow: 1; border: 1px solid #D1D5DB; border-radius: 20px; padding: 8px 15px; margin-right: 8px; outline: none; transition: border-color 0.2s; }
+        #chat-input:focus { border-color: #DC2626; }
+        #send-button { background-color: #DC2626; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.2s; flex-shrink: 0; }
+        #send-button:hover { background-color: #B91C1C; }
+        #close-chat-button { background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer; }
+
+        /* --- General Modal Styles --- */
+        .modal {
+            position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); z-index: 1050;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out;
+        }
+        .modal.visible { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background-color: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 100%;
+            max-height: 90vh;
+            overflow-y: auto; position: relative; box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            transform: scale(0.95); transition: transform 0.3s ease-out;
+        }
+        .modal.visible .modal-content { transform: scale(1); }
+         #auth-content { max-width: 450px; }
+         #privacy-content, #terms-content { max-width: 700px; }
+         #chat-widget .modal-content { padding: 0; max-width: 350px; height: 450px; max-height: 90%;} /* Style riêng cho chat modal */
+
+
+        /* --- Modal Close Buttons --- */
+        .modal-close-button {
+            position: absolute; top: 15px; right: 15px; background: #E5E7EB; border: none; border-radius: 50%;
+            width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+            color: #4B5563; font-size: 1.2rem; cursor: pointer; transition: background-color 0.2s, color 0.2s; z-index: 10; /* Đảm bảo nút đóng ở trên */
+        }
+        #chat-widget .modal-close-button { /* Nút đóng chat đặc biệt */
+             top: 12px; right: 15px; background: none; color: white; width: auto; height: auto; font-size: 1.5rem;
+        }
+        .modal-close-button:hover { background-color: #D1D5DB; color: #1F2937; }
+        #chat-widget .modal-close-button:hover { background-color: transparent; color: #fee2e2; }
+
+
+        /* --- Modal Titles --- */
+        .modal-title {
+            font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: bold; margin-bottom: 25px; text-align: center;
+        }
+        #info-modal .modal-title { color: #DC2626; }
+        #tips-modal .modal-title { color: #16A34A; }
+        #notification-panel .modal-title { color: #1D4ED8; }
+        #auth-modal .modal-title { color: #4B5563; }
+        #privacy-modal .modal-title, #terms-modal .modal-title { color: #4B5563; }
+
+        /* --- Modal Content Styles --- */
+        #modal-details, #tips-content ul, #notification-content .notification-item p, #privacy-content p, #terms-content p, #modal-booking-form label { color: #374151; line-height: 1.7; }
+        #modal-image { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; }
+        .modal-practical-info {
+            background-color: #f3f4f6; border-left: 4px solid #DC2626; padding: 10px 15px;
+            margin-top: 15px; font-size: 0.9rem; border-radius: 5px;
+        }
+         .modal-practical-info p { margin-bottom: 5px; }
+         .modal-practical-info strong { color: #1f2937; }
+        #tips-content ul { list-style: none; padding-left: 0; }
+        #tips-content li { margin-bottom: 1rem; padding-left: 1.5rem; position: relative; }
+        #tips-content li::before { content: '\f0eb'; font-family: 'Font Awesome 5 Free'; font-weight: 900; position: absolute; left: 0; top: 4px; color: #16A34A; }
+        #tips-content strong { color: #15803d; }
+        .notification-item { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+        .notification-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .notification-item h4 { font-weight: bold; color: #1F2937; margin-bottom: 5px; }
+        .notification-item p { color: #4B5563; font-size: 0.9rem; }
+        .notification-item small { color: #6B7280; font-size: 0.8rem; }
+
+        /* --- Auth Modal Specific Styles --- */
+        .auth-form label { display: block; margin-bottom: 0.3rem; font-size: 0.875rem; color: #4B5563; font-weight: 500; }
+        .auth-form input[type="text"],
+        .auth-form input[type="email"],
+        .auth-form input[type="tel"],
+        .auth-form input[type="password"] {
+            width: 100%; padding: 0.65rem 0.75rem; border: 1px solid #D1D5DB; border-radius: 0.375rem;
+            margin-bottom: 1rem; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .auth-form input:focus { outline: none; border-color: #DC2626; box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3); }
+        .auth-form button[type="submit"] {
+            width: 100%; background-color: #DC2626; color: white; padding: 0.75rem; border: none;
+            border-radius: 0.375rem; font-weight: bold; cursor: pointer; transition: background-color 0.3s; margin-top: 0.5rem;
+        }
+        .auth-form button[type="submit"]:hover { background-color: #B91C1C; }
+        .auth-switch-link {
+            display: block; text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: #6B7280;
+        }
+        .auth-switch-link button {
+            background: none; border: none; color: #DC2626; font-weight: 600; cursor: pointer; padding: 0;
+            text-decoration: underline;
+        }
+        .auth-switch-link button:hover { color: #B91C1C; }
+        .google-signin-button {
+            display: flex; align-items: center; justify-content: center; width: 100%; padding: 0.75rem;
+            border: 1px solid #D1D5DB; border-radius: 0.375rem; background-color: white; color: #374151;
+            font-weight: 500; cursor: pointer; transition: background-color 0.2s; margin-top: 1rem;
+        }
+        .google-signin-button:hover { background-color: #f9fafb; }
+        .google-signin-button img { width: 20px; height: 20px; margin-right: 10px; }
+
+        /* --- Modal Booking Form Styles --- */
+        #modal-booking-form { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; }
+        #modal-booking-form h4 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #111827; }
+        #modal-booking-form label { display: block; margin-bottom: 0.3rem; font-size: 0.875rem; font-weight: 500;}
+        #modal-booking-form input[type="date"],
+        #modal-booking-form input[type="text"],
+        #modal-booking-form input[type="tel"],
+        #modal-booking-form input[type="email"] {
+             width: 100%; padding: 0.65rem 0.75rem; border: 1px solid #D1D5DB; border-radius: 0.375rem; margin-bottom: 1rem; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        #modal-booking-form input:focus { outline: none; border-color: #16A34A; box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.3); }
+        #modal-booking-form button {
+             width: 100%; background-color: #16A34A; color: white; padding: 0.75rem; border: none;
+            border-radius: 0.375rem; font-weight: bold; cursor: pointer; transition: background-color 0.3s; margin-top: 0.5rem;
+        }
+        #modal-booking-form button:hover { background-color: #15803d; }
+
+        /* --- Floating Buttons --- */
+        .floating-chat-button { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
+        .floating-notification-button { position: fixed; bottom: 20px; left: 20px; z-index: 1000; }
+
+        /* --- Explore Button --- */
+        .explore-button {
+             display: inline-flex; align-items: center; background-color: transparent;
+             border: 1px solid #DC2626; color: #DC2626; padding: 0.6rem 1rem;
+             border-radius: 0.5rem; font-size: 0.875rem; transition: background-color 0.3s, color 0.3s;
+             text-decoration: none; margin-left: 0.5rem;
+        }
+        .explore-button:hover { background-color: #DC2626; color: white; }
+        .explore-button i { margin-left: 0.4rem; }
+        .button-group { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+
+        /* --- Cuisine Section --- */
+        .cuisine-card {
+            background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            overflow: hidden; transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+        }
+        .cuisine-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .cuisine-card img { width: 100%; height: 200px; object-fit: cover; }
+        .cuisine-card h4 { font-family: 'Playfair Display', serif; color: #ca8a04; }
+        .cuisine-card .address-list { font-size: 0.8rem; color: #4b5563; margin-top: 0.75rem; padding-left: 1rem; list-style: none; }
+         .cuisine-card .address-list li { position: relative; padding-left: 1.2rem; margin-bottom: 0.3rem; }
+         .cuisine-card .address-list li::before { content: '\f3c5'; font-family: 'Font Awesome 5 Free'; font-weight: 900; position: absolute; left: 0; top: 2px; color: #f59e0b; }
+         .cuisine-card .address-list span { font-style: italic; color: #6b7280; }
+
+        /* --- Search Bar --- */
+        #search-input {
+            border: 1px solid #D1D5DB; border-radius: 25px; padding: 10px 18px 10px 45px;
+            font-size: 1rem; background-color: rgba(255, 255, 255, 0.85); color: #1F2937;
+            transition: border-color 0.2s, box-shadow 0.2s; width: 100%; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+         #search-input::placeholder { color: #6B7280; }
+         #search-input:focus { outline: none; border-color: #DC2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.3); }
+         #search-button {
+            background-color: #DC2626; color: white; border: none; border-radius: 50%; width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color 0.2s;
+            margin-left: -48px; z-index: 10;
+         }
+         #search-button:hover { background-color: #B91C1C; }
+        #search-container::before {
+            content: '\f002'; font-family: 'Font Awesome 5 Free'; font-weight: 900; position: absolute; left: 18px;
+            top: 50%; transform: translateY(-50%); color: #9CA3AF; z-index: 5; pointer-events: none;
+        }
+
+        /* --- Login/Register Buttons --- */
+        .auth-button {
+            padding: 6px 14px; border-radius: 20px; font-size: 0.875rem; font-weight: 500;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s; cursor: pointer;
+        }
+        .login-button { border: 1px solid #DC2626; color: #DC2626; }
+        .login-button:hover { background-color: #FEE2E2; }
+        .register-button { background-color: #DC2626; color: white; border: 1px solid #DC2626; }
+        .register-button:hover { background-color: #B91C1C; border-color: #B91C1C; }
+
+        /* --- Hero Text Shadow --- */
+        .hero-text-shadow { text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4); }
+
+    </style>
+</head>
+<body class="bg-white text-gray-800 antialiased">
+
+    <header class="fixed top-0 left-0 w-full z-50 transition-colors duration-300 bg-white/80 backdrop-blur-sm shadow-sm">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+             <a href="#" class="text-2xl font-bold font-heading text-red-700 md:mx-0">HANOI TRAVEL</a>
+            <div class="hidden md:flex items-center space-x-8 ml-auto">
+                <nav class="flex space-x-8">
+                    <a href="#nature" class="text-gray-700 hover:text-red-700 transition duration-300">Điểm đến</a>
+                    <a href="#culture" class="text-gray-700 hover:text-red-700 transition duration-300">Văn hóa</a>
+                    <a href="#cuisine" class="text-gray-700 hover:text-red-700 transition duration-300">Ẩm thực</a>
+                    <a href="#tours" class="text-gray-700 hover:text-red-700 transition duration-300">Tours & Chỗ ở</a>
+                    <a href="#people" class="text-gray-700 hover:text-red-700 transition duration-300">Con người</a>
+                    <a href="#contact" class="text-gray-700 hover:text-red-700 transition duration-300">Liên hệ</a>
+                </nav>
+                <div class="flex items-center space-x-3">
+                     <button data-modal-target="#auth-modal" data-view="login" class="auth-button login-button modal-trigger">
+                        Đăng nhập
+                     </button>
+                     <button data-modal-target="#auth-modal" data-view="register" class="auth-button register-button modal-trigger">
+                        Đăng ký
+                     </button>
+                </div>
+            </div>
+            <button id="menu-toggle" class="text-gray-900 focus:outline-none md:hidden ml-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <div id="menu-overlay" class="fixed inset-0 bg-black/90 z-40 flex flex-col items-center justify-center space-y-8 opacity-0 pointer-events-none md:hidden">
+        <button id="close-menu" class="absolute top-6 right-6 text-white text-3xl">×</button>
+         <a href="#nature" class="text-white text-2xl hover:text-red-500 transition duration-300 menu-link">Điểm đến</a>
+         <a href="#culture" class="text-white text-2xl hover:text-red-500 transition duration-300 menu-link">Văn hóa</a>
+         <a href="#cuisine" class="text-white text-2xl hover:text-red-500 transition duration-300 menu-link">Ẩm thực</a>
+         <a href="#tours" class="text-white text-2xl hover:text-red-500 transition duration-300 menu-link">Tours & Chỗ ở</a>
+         <a href="#people" class="text-white text-2xl hover:text-red-500 transition duration-300 menu-link">Con người</a>
+         <a href="#contact" class="text-white text-2xl hover:text-red-500 transition duration-300 menu-link">Liên hệ</a>
+         <div class="flex space-x-4 mt-6">
+             <button data-modal-target="#auth-modal" data-view="login" class="auth-button login-button !text-white !border-white hover:!bg-white/20 modal-trigger">
+                Đăng nhập
+             </button>
+             <button data-modal-target="#auth-modal" data-view="register" class="auth-button register-button modal-trigger">
+                Đăng ký
+             </button>
+         </div>
+    </div>
+
+    <section id="hero" class="h-screen flex items-center justify-center text-center bg-gray-700 text-white relative overflow-hidden parallax "
+        style="background-image: url('https://scontent.fhan2-4.fna.fbcdn.net/v/t1.15752-9/491270364_1214819756704242_2373861971199706224_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeGFBrRQVPOvf0oNZl4eYisYPYS-2O1wMo89hL7Y7XAyj5aBACiqBhwzPYXfnyz2go5lz_2BQVvvakWzqKNPOSA_&_nc_ohc=f9pJ2mpQsAUQ7kNvwGfPDuU&_nc_oc=AdnZr4Hag_WPyRSt5l-zP7w1xbZoKLh_7S27qW-LtOGbIuVlXBtqd7cwb26xQbNN-q0&_nc_zt=23&_nc_ht=scontent.fhan2-4.fna&oh=03_Q7cD2AGLMHD6PzqXygk7veliysACHATjYA9JIgkMmRF7Ya0HVw&oe=682CC044');">
+        <div class="absolute inset-0 "></div>
+        <div class="relative z-10 p-8 max-w-3xl mx-auto fade-in"> <h1 class="text-5xl md:text-7xl font-black font-heading mb-6 leading-tight text-white hero-text-shadow">Khám Phá Hà Nội</h1>
+            <p class="text-xl md:text-2xl font-light mb-8 text-gray-100 hero-text-shadow">Trải nghiệm thủ đô ngàn năm văn hiến với những nét đẹp cổ kính và hiện đại đan xen.</p>
+            <div id="search-container" class="relative flex items-center max-w-md mx-auto mb-8"> <input type="search" id="search-input" placeholder="Tìm kiếm điểm đến, món ăn, tour..." class="">
+                <button id="search-button" aria-label="Tìm kiếm">
+                    <i class="fas fa-search text-sm"></i>
+                </button>
+            </div>
+            <a href="#tours" class="inline-block bg-red-600 text-white px-8 py-4 rounded-lg hover:bg-red-700 transition duration-300 font-semibold text-lg shadow-lg hover:shadow-xl">
+                Lên kế hoạch chuyến đi ngay!
+            </a>
+        </div>
+    </section>
+
+    <section id="nature" class="py-20 md:py-32 bg-gradient-to-br from-emerald-100 to-sky-200">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl md:text-5xl font-heading font-bold text-emerald-800 mb-4">Điểm Đến Thiên Nhiên & Di Tích</h2> <p class="text-lg text-gray-700 max-w-2xl mx-auto">Những không gian xanh mát và di tích lịch sử không thể bỏ qua.</p> </div>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-8 items-center mb-16">
+                 <div class="md:col-span-3 rounded-lg overflow-hidden shadow-xl fade-in">
+                    <img src="https://scontent.fhan20-1.fna.fbcdn.net/v/t1.15752-9/491024287_1204900091022504_77758537545501957_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeECigTU3adkuF-uFou8Re_Zg7lLf3qv7tCDuUt_eq_u0BR6Q_C6raN9IgO8dm5UMRf-8c_igWHBhtBW2Zi9CyuG&_nc_ohc=sUSNdoEycC8Q7kNvwE8aCZk&_nc_oc=AdmGM6gxKyvzKHyAIHTOnJLI_GMW05AJQWhkrgaLwqYLwC9OtNWnP6UyoaFTGgzCMkU&_nc_zt=23&_nc_ht=scontent.fhan20-1.fna&oh=03_Q7cD2AFJp7cKk7FXHeBKhzDzs5h5wToxL5N1RXriQezPnPLJhA&oe=682CCB94" alt="Hồ Gươm" class="w-full h-auto object-cover">
+                </div>
+                <div class="md:col-span-2 fade-in" style="transition-delay: 0.2s;">
+                    <h3 class="text-3xl font-heading font-semibold text-emerald-700 mb-4">Hồ Gươm & Đền Ngọc Sơn</h3> <p class="text-gray-800 mb-4 leading-relaxed">Trái tim của Hà Nội, nơi bạn có thể dạo bộ, tham quan đền và cảm nhận nhịp sống thủ đô.</p> <div class="text-sm text-gray-700 mb-6">
+                        <p><strong><i class="fas fa-clock mr-1"></i> Giờ mở cửa Đền Ngọc Sơn:</strong> 08:00 - 18:00</p>
+                        <p><strong><i class="fas fa-ticket-alt mr-1"></i> Giá vé (tham khảo):</strong> 30.000 VNĐ/người lớn</p>
+                        <p><strong><i class="fas fa-map-marker-alt mr-1"></i> Vị trí:</strong> Trung tâm Quận Hoàn Kiếm</p>
+                    </div>
+                    <div class="button-group">
+                        <button class="info-modal-trigger modal-trigger inline-block bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition duration-300 text-sm"
+                                data-modal-target="#info-modal"
+                                data-title="Hồ Gươm & Đền Ngọc Sơn"
+                                data-image="https://scontent.fhan20-1.fna.fbcdn.net/v/t1.15752-9/491024287_1204900091022504_77758537545501957_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeECigTU3adkuF-uFou8Re_Zg7lLf3qv7tCDuUt_eq_u0BR6Q_C6raN9IgO8dm5UMRf-8c_igWHBhtBW2Zi9CyuG&_nc_ohc=sUSNdoEycC8Q7kNvwE8aCZk&_nc_oc=AdmGM6gxKyvzKHyAIHTOnJLI_GMW05AJQWhkrgaLwqYLwC9OtNWnP6UyoaFTGgzCMkU&_nc_zt=23&_nc_ht=scontent.fhan20-1.fna&oh=03_Q7cD2AFJp7cKk7FXHeBKhzDzs5h5wToxL5N1RXriQezPnPLJhA&oe=682CCB94"
+                                data-details="Hồ Gươm (Hồ Hoàn Kiếm) là biểu tượng của Hà Nội. Đền Ngọc Sơn nằm trên đảo Ngọc giữa hồ, nối với bờ bằng cầu Thê Húc sơn son. Đây là điểm tham quan không thể bỏ qua.\n\n<div class='modal-practical-info'><p><strong>Giờ mở cửa Đền Ngọc Sơn:</strong> 08:00 - 18:00 hàng ngày.</p><p><strong>Giá vé tham khảo:</strong> 30.000 VNĐ/người lớn, miễn phí cho trẻ em dưới 15 tuổi.</p><p><strong>Lưu ý:</strong> Trang phục lịch sự khi vào đền.</p></div>">
+                            Xem chi tiết
+                        </button>
+                        <a href="https://maps.app.goo.gl/pVRXYCo46BhFQjUV7"> Xem 360° <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mt-16">
+                <div class="bg-white p-6 rounded-lg shadow-lg fade-in hover:shadow-xl transition-shadow duration-300 flex flex-col">
+                     <img src="https://i.pinimg.com/736x/61/e6/d1/61e6d19cad7b0c10c526d08ad2960850.jpg" alt="Phố đi bộ Hà Nội" class="w-full h-48 object-cover rounded-md mb-4">
+                    <h4 class="text-xl font-semibold font-heading text-emerald-800 mb-2">Làng hương Quảng Phú Cầu</h4>
+                    <p class="text-gray-700 text-sm flex-grow">Quảng Phú Cầu, làng nghề làm hương trăm năm ở Ứng Hòa, Hà Nội, nổi tiếng với cảnh sắc rực rỡ của hàng ngàn bó hương nhuộm màu, phơi khắp làng, mang đậm nét văn hóa truyền thống.</p>
+                     <div class="button-group mt-auto pt-4">
+                         <button class="info-modal-trigger modal-trigger text-emerald-600 hover:text-emerald-800 text-sm self-start"
+                                data-modal-target="#info-modal"
+                                data-title="Làng hương Quảng Phú Cầu"
+                                data-image="https://i.pinimg.com/736x/61/e6/d1/61e6d19cad7b0c10c526d08ad2960850.jpg"
+                                data-details="Làng hương Quảng Phú Cầu, nằm ở huyện Ứng Hòa, Hà Nội, là một ngôi làng truyền thống nổi tiếng với nghề làm hương (nhang) hơn 100 năm tuổi. Nơi đây không chỉ giữ gìn nét đẹp văn hóa tâm linh mà còn thu hút du khách bởi khung cảnh rực rỡ của hàng ngàn bó hương được nhuộm màu đỏ, hồng, vàng, phơi khắp các con ngõ và sân nhà, tạo nên một bức tranh độc đáo và ấn tượng.</p></div>">
+                            Xem chi tiết <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                         <a href="https://maps.app.goo.gl/5Qt5T8VydNPBbFHf7" target="_blank" class="explore-button border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white"> Xem 360° <i class="fas fa-external-link-alt"></i>
+                        </a>
+                     </div>
+                </div>
+                 <div class="bg-white p-6 rounded-lg shadow-lg fade-in hover:shadow-xl transition-shadow duration-300 flex flex-col" style="transition-delay: 0.1s;">
+                    <img src="https://scontent.fhan2-4.fna.fbcdn.net/v/t1.15752-9/490983468_680657914610127_4661548930430387056_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeFSQ9x88DnVRrex_nvtkkmGb5ggBWw2oA9vmCAFbDagD2ORmTRNfzcTPR6NAcoa_BfUIi1MdVtazPn_Faq0rNgu&_nc_ohc=CNIcpvodA-cQ7kNvwGBd0eJ&_nc_oc=AdnyrlWBftFuexhwKrY2Iqu1ne2KbluJ-QD81FfAbG_4HlYzq1WupKXw_cTVI8SR_0A&_nc_zt=23&_nc_ht=scontent.fhan2-4.fna&oh=03_Q7cD2AEH9ODLbTb5pD4O1fqXAwAkJFTPZx2wa9N45KK7cB4z7A&oe=682CC6CC" alt="Nhà Thờ Lớn Hà Nội" class="w-full h-48 object-cover rounded-md mb-4">
+                    <h4 class="text-xl font-semibold font-heading text-emerald-800 mb-2">Nhà Thờ Lớn Hà Nội</h4>
+                    <p class="text-gray-700 text-sm flex-grow">Kiến trúc Gothic cổ kính giữa lòng thành phố, điểm check-in nổi tiếng.</p>
+                    <div class="button-group mt-auto pt-4">
+                        <button class="info-modal-trigger modal-trigger text-emerald-600 hover:text-emerald-800 text-sm self-start"
+                                data-modal-target="#info-modal"
+                                data-title="Nhà Thờ Lớn Hà Nội"
+                                data-image="https://scontent.fhan2-4.fna.fbcdn.net/v/t1.15752-9/490983468_680657914610127_4661548930430387056_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeFSQ9x88DnVRrex_nvtkkmGb5ggBWw2oA9vmCAFbDagD2ORmTRNfzcTPR6NAcoa_BfUIi1MdVtazPn_Faq0rNgu&_nc_ohc=CNIcpvodA-cQ7kNvwGBd0eJ&_nc_oc=AdnyrlWBftFuexhwKrY2Iqu1ne2KbluJ-QD81FfAbG_4HlYzq1WupKXw_cTVI8SR_0A&_nc_zt=23&_nc_ht=scontent.fhan2-4.fna&oh=03_Q7cD2AEH9ODLbTb5pD4O1fqXAwAkJFTPZx2wa9N45KK7cB4z7A&oe=682CC6CC"
+                                data-details="Nhà thờ Chính tòa Thánh Giuse, thường gọi là Nhà thờ Lớn, là một công trình kiến trúc Pháp cổ đặc trưng. Khu vực xung quanh nhà thờ cũng rất sôi động với nhiều quán cà phê, trà chanh.\n\n<div class='modal-practical-info'><p><strong>Lưu ý:</strong> Giữ im lặng và trang phục lịch sự khi vào bên trong nhà thờ (nếu mở cửa tham quan).</p><p><strong>Hoạt động:</strong> Chụp ảnh, cà phê, trà chanh vỉa hè.</p></div>">
+                            Xem chi tiết <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                         <a href="https://maps.app.goo.gl/9BRPD3A4tmWmmwe37" target="_blank" class="explore-button border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white">
+                            Xem 360° <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                </div>
+                 <div class="bg-white p-6 rounded-lg shadow-lg fade-in hover:shadow-xl transition-shadow duration-300 flex flex-col" style="transition-delay: 0.2s;">
+                    <img src="https://scontent.fhan2-3.fna.fbcdn.net/v/t1.15752-9/486827349_2230486070716778_5416711023973099482_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeG34pnbMWWmuqbnr-dqv-v7ThcLQUIHzXtOFwtBQgfNe86RpSIz_fcSnukNMRCeN8DS8HPDR9dIGCOMhRYbfPDp&_nc_ohc=IgWDCVIBJxsQ7kNvwH3AcW5&_nc_oc=AdmQG7_Xx-PhP-ZLl4XBL9c2_UqhEwIlOxSXHCqIJbPg6-WEBvZiWSD6FcCL8P2sHhs&_nc_zt=23&_nc_ht=scontent.fhan2-3.fna&oh=03_Q7cD2AEG98eaOHZZ82aa7AkajWiRz526BNmgMO_gz3fFDbeFyw&oe=682CB509" alt="Hoàng Thành Thăng Long" class="w-full h-48 object-cover rounded-md mb-4">
+                    <h4 class="text-xl font-semibold font-heading text-emerald-800 mb-2">Hoàng Thành Thăng Long</h4>
+                    <p class="text-gray-700 text-sm flex-grow">Di sản văn hóa thế giới, nơi lưu giữ dấu ấn lịch sử ngàn năm.</p>
+                    <div class="button-group mt-auto pt-4">
+                        <button class="info-modal-trigger modal-trigger text-emerald-600 hover:text-emerald-800 text-sm self-start"
+                                data-modal-target="#info-modal"
+                                data-title="Hoàng Thành Thăng Long"
+                                data-image="https://scontent.fhan2-3.fna.fbcdn.net/v/t1.15752-9/486827349_2230486070716778_5416711023973099482_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeG34pnbMWWmuqbnr-dqv-v7ThcLQUIHzXtOFwtBQgfNe86RpSIz_fcSnukNMRCeN8DS8HPDR9dIGCOMhRYbfPDp&_nc_ohc=IgWDCVIBJxsQ7kNvwH3AcW5&_nc_oc=AdmQG7_Xx-PhP-ZLl4XBL9c2_UqhEwIlOxSXHCqIJbPg6-WEBvZiWSD6FcCL8P2sHhs&_nc_zt=23&_nc_ht=scontent.fhan2-3.fna&oh=03_Q7cD2AEG98eaOHZZ82aa7AkajWiRz526BNmgMO_gz3fFDbeFyw&oe=682CB509"
+                                data-details="Khu di tích trung tâm Hoàng thành Thăng Long là quần thể di tích gắn với lịch sử kinh thành Thăng Long - Hà Nội. Nơi đây có nhiều công trình kiến trúc và khảo cổ quan trọng.\n\n<div class='modal-practical-info'><p><strong>Giờ mở cửa:</strong> 08:00 - 17:00 (Thứ 3 - Chủ Nhật)</p><p><strong>Giá vé (tham khảo):</strong> 30.000 VNĐ/người lớn.</p></div>">
+                            Xem chi tiết <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                         <a href="https://maps.app.goo.gl/Nn9HdnW9ru7qouTh7" target="_blank" class="explore-button border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white">
+                            Xem 360° <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg fade-in hover:shadow-xl transition-shadow duration-300 flex flex-col" style="transition-delay: 0.3s;">
+                    <img src="https://i.pinimg.com/736x/f0/6e/1c/f06e1c0799846c552f00ca1422579940.jpg" alt="Lăng Chủ tịch Hồ Chí Minh" class="w-full h-48 object-cover rounded-md mb-4">
+                    <h4 class="text-xl font-semibold font-heading text-emerald-800 mb-2">Lăng Chủ tịch Hồ Chí Minh</h4>
+                    <p class="text-gray-700 text-sm flex-grow">Nơi an nghỉ của Bác Hồ, địa điểm thiêng liêng và trang trọng.</p>
+                    <div class="button-group mt-auto pt-4">
+                        <button class="info-modal-trigger modal-trigger text-emerald-600 hover:text-emerald-800 text-sm self-start"
+                                data-modal-target="#info-modal"
+                                data-title="Lăng Chủ tịch Hồ Chí Minh"
+                                data-image="https://i.pinimg.com/736x/f0/6e/1c/f06e1c0799846c552f00ca1422579940.jpg"
+                                data-details="Lăng Chủ tịch Hồ Chí Minh là nơi đặt thi hài của Bác. Du khách đến viếng Lăng cần tuân thủ các quy định về trang phục và giờ giấc.\n\n<div class='modal-practical-info'><p><strong>Giờ mở cửa (tham khảo, có thể thay đổi):</strong> Sáng 07:30 - 10:30 (Thứ 3-5, 7, CN). Thứ 2 & 6 đóng cửa. Lăng thường đóng cửa bảo trì vào tháng 10, 11.</p><p><strong>Quy định trang phục:</strong> Lịch sự, kín đáo (không mặc quần short, váy ngắn, áo hở hang).</p><p><strong>Lưu ý:</strong> Giữ im lặng, không chụp ảnh bên trong Lăng.</p></div>">
+                            Xem chi tiết <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                         <a href="https://maps.app.goo.gl/BfEfJBAU2RHCJ57t8" target="_blank" class="explore-button border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white"> Xem 360° <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="culture" class="py-20 md:py-32 bg-gradient-to-tl from-red-100 via-orange-50 to-red-100 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-1/4 h-1/2 border-l-4 border-b-4 border-red-200 opacity-50 -z-10 transform -translate-x-1/4 -translate-y-1/4"></div> <div class="absolute bottom-0 right-0 w-1/3 h-1/3 border-r-4 border-t-4 border-red-200 opacity-50 -z-10 transform translate-x-1/4 translate-y-1/4"></div> <div class="container mx-auto px-6 relative z-10">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl md:text-5xl font-heading font-bold text-red-800 mb-4">Trải Nghiệm Văn Hóa Đặc Sắc</h2>
+                <p class="text-lg text-gray-700 max-w-2xl mx-auto">Đắm mình vào lịch sử, nghệ thuật và ẩm thực độc đáo.</p> </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-16">
+                <div class="order-2 md:order-1 fade-in">
+                    <h3 class="text-3xl font-heading font-semibold text-red-700 mb-4">Phố Cổ - 36 Phố Phường</h3>
+                    <p class="text-gray-800 mb-4 leading-relaxed">Khám phá mê cung những con phố nhỏ, mỗi phố một mặt hàng, và thưởng thức ẩm thực đường phố.</p> <div class="text-sm text-gray-700 mb-6">
+                        <p><strong><i class="fas fa-walking mr-1"></i> Hoạt động:</strong> Đi bộ khám phá, mua sắm, ẩm thực, cà phê.</p>
+                        <p><strong><i class="fas fa-lightbulb mr-1"></i> Mẹo:</strong> Nên đi bộ hoặc xích lô để cảm nhận rõ nhất.</p>
+                    </div>
+                     <div class="button-group mb-4">
+                         <button class="info-modal-trigger modal-trigger inline-block bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition duration-300 text-sm"
+                                data-modal-target="#info-modal"
+                                data-title="Phố Cổ - 36 Phố Phường"
+                                data-image="https://i.pinimg.com/736x/41/0f/fb/410ffbf9d0bc4a142825517ef79f5352.jpg"
+                                data-details="Phố Cổ Hà Nội là điểm đến không thể bỏ qua với kiến trúc cổ kính và nhịp sống sôi động. Hãy lang thang qua các phố Hàng Bạc, Hàng Mã, Hàng Đường... để mua sắm và thưởng thức các món ăn vặt.\n\n<div class='modal-practical-info'><p><strong>Phương tiện khám phá tốt nhất:</strong> Đi bộ, xích lô.</p><p><strong>Ẩm thực nên thử:</strong> Bún chả Hàng Mành, phở Bát Đàn, cà phê trứng Giảng...</p></div>">
+                            Xem chi tiết
+                        </button>
+                         <a href="https://maps.app.goo.gl/GbPJ8n11PsFzBK666" target="_blank" class="explore-button border-red-600 text-red-600 hover:bg-red-600 hover:text-white"> Xem 360° <i class="fas fa-external-link-alt"></i>
+                        </a>
+                     </div>
+                     </div>
+                <div class="order-1 md:order-2 relative fade-in" style="transition-delay: 0.2s;">
+                    <img src="https://i.pinimg.com/736x/41/0f/fb/410ffbf9d0bc4a142825517ef79f5352.jpg" alt="Phố Cổ Hà Nội" class="rounded-lg shadow-2xl w-full h-auto object-cover transform md:rotate-3 transition duration-500 hover:rotate-0 hover:scale-105">
+                    <div class="absolute -bottom-4 -right-4 w-24 h-24 bg-red-100 rounded-full -z-10"></div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                 <div class="bg-white p-6 rounded-lg shadow-lg fade-in hover:shadow-xl transition-shadow duration-300 flex flex-col">
+                    <img src="https://scontent.fhan2-5.fna.fbcdn.net/v/t1.15752-9/475966207_1787210362067341_8643091687901219166_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeETQlgxzh9hxBleA_a8VpHfE7iz2fhBK5ATuLPZ-EErkK63dz8l1RmT2GjXSdSwemGS5RyMBrFfZoAzOL8QVimX&_nc_ohc=Zv_nE_Z9NFMQ7kNvwErSUaV&_nc_oc=AdkWcCd510D9_JJ1tl9nVRpPGlLrwCNBUojfdtHo6Gv5jyHGSixKrJF57ZZt3FLUE0Q&_nc_zt=23&_nc_ht=scontent.fhan2-5.fna&oh=03_Q7cD2AG6B0Cv_hS_7VU_wZDgEmNHZr6l5fyew2F7nteul-r2Lg&oe=682C9A73" alt="Văn Miếu - Quốc Tử Giám" class="w-full h-48 object-cover rounded-md mb-4">
+                    <h4 class="text-xl font-semibold font-heading text-red-800 mb-2">Văn Miếu - Quốc Tử Giám</h4>
+                    <p class="text-gray-700 text-sm flex-grow">Trường đại học đầu tiên, biểu tượng của tri thức và Nho học Việt Nam.</p>
+                    <div class="button-group mt-auto pt-4">
+                        <button class="info-modal-trigger modal-trigger text-red-600 hover:text-red-800 text-sm self-start"
+                                 data-modal-target="#info-modal"
+                                 data-title="Văn Miếu - Quốc Tử Giám"
+                                 data-image="https://scontent.fhan2-5.fna.fbcdn.net/v/t1.15752-9/475966207_1787210362067341_8643091687901219166_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeETQlgxzh9hxBleA_a8VpHfE7iz2fhBK5ATuLPZ-EErkK63dz8l1RmT2GjXSdSwemGS5RyMBrFfZoAzOL8QVimX&_nc_ohc=Zv_nE_Z9NFMQ7kNvwErSUaV&_nc_oc=AdkWcCd510D9_JJ1tl9nVRpPGlLrwCNBUojfdtHo6Gv5jyHGSixKrJF57ZZt3FLUE0Q&_nc_zt=23&_nc_ht=scontent.fhan2-5.fna&oh=03_Q7cD2AG6B0Cv_hS_7VU_wZDgEmNHZr6l5fyew2F7nteul-r2Lg&oe=682C9A73"
+                                 data-details="Tham quan quần thể kiến trúc cổ kính, tìm hiểu về lịch sử khoa cử Việt Nam và cầu may mắn trong học tập, thi cử.\n\n<div class='modal-practical-info'><p><strong>Giờ mở cửa:</strong> 08:00 - 17:00 hàng ngày.</p><p><strong>Giá vé (tham khảo):</strong> 30.000 VNĐ/người lớn.</p><p><strong>Lưu ý:</strong> Nên thuê hướng dẫn viên hoặc audio guide để hiểu sâu hơn.</p></div>">
+                            Xem chi tiết <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                        <a href="https://maps.app.goo.gl/Hi7Yr32LjysuBFps6" target="_blank" class="explore-button border-red-600 text-red-600 hover:bg-red-600 hover:text-white"> Xem 360° <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                 </div>
+                 <div class="bg-white p-6 rounded-lg shadow-lg fade-in hover:shadow-xl transition-shadow duration-300 flex flex-col" style="transition-delay: 0.1s;">
+                    <img src="https://scontent.fhan2-4.fna.fbcdn.net/v/t1.15752-9/489731961_602161669522769_5952306706831526440_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeFFm1K6jSfZwYrJJpazpEnF18_-GU538g_Xz_4ZTnfyD_ZxmTUbC3524aBlPb5atGTzvgDtJyQ6Iw_VC-SzM54n&_nc_ohc=xFdrUDQ70CIQ7kNvwFY27rd&_nc_oc=Adk7VuxAlGJxIcUikExOP9zoXx3KsironuXAN1CPLnEjSL4eqjd4n3rQfGSavnMne8o&_nc_zt=23&_nc_ht=scontent.fhan2-4.fna&oh=03_Q7cD2AEYBVLBsdTstdw10TEduhhT9En4OIJFVo6WQa2_0UDexQ&oe=682C97F8" alt="Nhà tù Hỏa Lò" class="w-full h-48 object-cover rounded-md mb-4">
+                    <h4 class="text-xl font-semibold font-heading text-red-800 mb-2">Di tích Nhà tù Hỏa Lò</h4>
+                    <p class="text-gray-700 text-sm flex-grow">Chứng tích lịch sử về cuộc đấu tranh cách mạng kiên cường của dân tộc.</p>
+                     <div class="button-group mt-auto pt-4">
+                         <button class="info-modal-trigger modal-trigger text-red-600 hover:text-red-800 text-sm self-start"
+                                 data-modal-target="#info-modal"
+                                 data-title="Di tích Nhà tù Hỏa Lò"
+                                 data-image="https://scontent.fhan2-4.fna.fbcdn.net/v/t1.15752-9/489731961_602161669522769_5952306706831526440_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeFFm1K6jSfZwYrJJpazpEnF18_-GU538g_Xz_4ZTnfyD_ZxmTUbC3524aBlPb5atGTzvgDtJyQ6Iw_VC-SzM54n&_nc_ohc=xFdrUDQ70CIQ7kNvwFY27rd&_nc_oc=Adk7VuxAlGJxIcUikExOP9zoXx3KsironuXAN1CPLnEjSL4eqjd4n3rQfGSavnMne8o&_nc_zt=23&_nc_ht=scontent.fhan2-4.fna&oh=03_Q7cD2AEYBVLBsdTstdw10TEduhhT9En4OIJFVo6WQa2_0UDexQ&oe=682C97F8"
+                                 data-details="Nơi từng giam giữ nhiều nhà cách mạng Việt Nam trong thời kỳ Pháp thuộc. Tham quan Hỏa Lò giúp hiểu thêm về lịch sử đấu tranh gian khổ và tinh thần bất khuất.\n\n<div class='modal-practical-info'><p><strong>Giờ mở cửa:</strong> 08:00 - 17:00 hàng ngày.</p><p><strong>Giá vé (tham khảo):</strong> 30.000 VNĐ/người lớn.</p><p><strong>Lưu ý:</strong> Không khí trang nghiêm, nên giữ thái độ tôn trọng.</p></div>">
+                            Xem chi tiết <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                         <a href="https://maps.app.goo.gl/BHBpGXukRtDqMFya8" target="_blank" class="explore-button border-red-600 text-red-600 hover:bg-red-600 hover:text-white">
+                             Xem 360° <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                </div>
+                 <div class="bg-white p-6 rounded-lg shadow-lg fade-in hover:shadow-xl transition-shadow duration-300 flex flex-col" style="transition-delay: 0.2s;">
+                    <img src="https://scontent.fhan2-3.fna.fbcdn.net/v/t1.15752-9/490833043_2993675834133086_6348146442723713891_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeGgxMoaQOCXjALKkosQeeKbkA8Nb4PR8CWQDw1vg9HwJRpPVC0fozaW42cvtSX104tVufmqQP9fcUCbg33njzc3&_nc_ohc=R493OWhr6QYQ7kNvwG8dRCy&_nc_oc=AdmKCbumLAtTXOOk_OzuxZxG6NermfScyhyFAP7n1cXzmMtFSXa6addp5hTOepRMbS8&_nc_zt=23&_nc_ht=scontent.fhan2-3.fna&oh=03_Q7cD2AGEVkW-xdt0vLi4j7avLJnbI-mVGLcLGoXEaUL6Du8y_w&oe=682CA365" alt="Làng gốm Bát Tràng" class="w-full h-48 object-cover rounded-md mb-4">
+                    <h4 class="text-xl font-semibold font-heading text-red-800 mb-2">Làng gốm Bát Tràng</h4>
+                    <p class="text-gray-700 text-sm flex-grow">Tham quan làng nghề gốm sứ truyền thống nổi tiếng và tự tay làm sản phẩm.</p>
+                     <div class="button-group mt-auto pt-4">
+                         <button class="info-modal-trigger modal-trigger text-red-600 hover:text-red-800 text-sm self-start"
+                                 data-modal-target="#info-modal"
+                                 data-title="Làng gốm Bát Tràng"
+                                 data-image="https://scontent.fhan2-3.fna.fbcdn.net/v/t1.15752-9/490833043_2993675834133086_6348146442723713891_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeGgxMoaQOCXjALKkosQeeKbkA8Nb4PR8CWQDw1vg9HwJRpPVC0fozaW42cvtSX104tVufmqQP9fcUCbg33njzc3&_nc_ohc=R493OWhr6QYQ7kNvwG8dRCy&_nc_oc=AdmKCbumLAtTXOOk_OzuxZxG6NermfScyhyFAP7n1cXzmMtFSXa6addp5hTOepRMbS8&_nc_zt=23&_nc_ht=scontent.fhan2-3.fna&oh=03_Q7cD2AGEVkW-xdt0vLi4j7avLJnbI-mVGLcLGoXEaUL6Du8y_w&oe=682CA365"
+                                 data-details="Cách trung tâm Hà Nội không xa, Bát Tràng là nơi bạn có thể khám phá quy trình làm gốm, mua sắm các sản phẩm độc đáo và trải nghiệm tự tay nặn, tô vẽ gốm.\n\n<div class='modal-practical-info'><p><strong>Hoạt động:</strong> Tham quan lò gốm, mua sắm, trải nghiệm làm gốm.</p><p><strong>Di chuyển:</strong> Có thể đi xe buýt, taxi hoặc thuê xe.</p></div>">
+                            Xem chi tiết <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                         <a href="https://maps.app.goo.gl/Dc4zWH7JVX75PVyM6" target="_blank" class="explore-button border-red-600 text-red-600 hover:bg-red-600 hover:text-white">
+                            Xem 360° <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="cuisine" class="py-20 md:py-32 bg-gradient-to-tr from-amber-100 to-orange-200">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl md:text-5xl font-heading font-bold text-amber-800 mb-4">Thiên Đường Ẩm Thực Hà Thành</h2>
+                <p class="text-lg text-gray-700 max-w-2xl mx-auto">Khám phá hương vị độc đáo làm nên tên tuổi ẩm thực thủ đô.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="cuisine-card fade-in">
+                    <img src="https://scontent.fhan2-4.fna.fbcdn.net/v/t1.15752-9/491023924_1207805931011610_5997960489307490800_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeExtzBPA5f0-uQtBSiioLKC7D-C10GocqXsP4LXQahypX3zP-1UJfxKgfWdu2wX4xIv67nYRujxBh1ls88ESXlO&_nc_ohc=m2yumG6HioUQ7kNvwFlIHMO&_nc_oc=Adk13CZoYA6uUl8kvk5gIMZLybT5acGVJHq2WhYY20vM9f8YshWb5cdeTECXZMRvF4o&_nc_zt=23&_nc_ht=scontent.fhan2-4.fna&oh=03_Q7cD2AFmmV_RT5dnPHLHMBgDmpJQG977MJ-rWp-pyqdWxQ_sLw&oe=682CA7EF" alt="Phở Bò Hà Nội">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-2">Phở Bò</h4>
+                        <p class="text-gray-700 text-sm mb-3">Linh hồn ẩm thực Việt với nước dùng đậm đà, thịt bò mềm và bánh phở dai ngon.</p>
+                        <h5 class="text-sm font-semibold text-gray-800 mb-2">Địa chỉ gợi ý:</h5>
+                        <ul class="address-list">
+                            <li>Phở Thìn - 13 Lò Đúc, Hai Bà Trưng <span>(Ví dụ)</span></li>
+                            <li>Phở Bát Đàn - 49 Bát Đàn, Hoàn Kiếm <span>(Ví dụ)</span></li>
+                            <li>Phở Lý Quốc Sư - 10 Lý Quốc Sư, Hoàn Kiếm <span>(Ví dụ)</span></li>
+                        </ul>
+                    </div>
+                </div>
+                 <div class="cuisine-card fade-in" style="transition-delay: 0.1s;">
+                    <img src="https://scontent.fhan2-3.fna.fbcdn.net/v/t1.15752-9/490104356_665360899689202_5978275956742763287_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeHCsAnJt4VsSYIjXRpdx7EbqD9eeafv7KWoP155p-_spQmisUWCAL8aW7ny1YmTMvlmzBRta6mWw7CPm6fvRMbx&_nc_ohc=6YvpydSH-JsQ7kNvwG1ao52&_nc_oc=AdmMb3EZONCQ9mw_0Obx8OTsQqQghjyzdRdgVWTirwA7x7i9B4XweDFpB8Tq70EqRLA&_nc_zt=23&_nc_ht=scontent.fhan2-3.fna&oh=03_Q7cD2AF67hDH6vpn9THQQlJxTUsS4ctG-sGvA0NosVQtv8YGXQ&oe=682CA8E7" alt="Bún Chả Hà Nội">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-2">Bún Chả</h4>
+                        <p class="text-gray-700 text-sm mb-3">Chả nướng thơm lừng ăn kèm bún, rau sống và nước chấm chua ngọt hài hòa.</p>
+                        <h5 class="text-sm font-semibold text-gray-800 mb-2">Địa chỉ gợi ý:</h5>
+                        <ul class="address-list">
+                            <li>Bún Chả Hương Liên (Obama) - 24 Lê Văn Hưu, Hai Bà Trưng <span>(Ví dụ)</span></li>
+                            <li>Bún Chả Hàng Mành - Ngõ Hàng Mành, Hoàn Kiếm <span>(Ví dụ)</span></li>
+                            <li>Bún Chả Đắc Kim - 1 Hàng Mành, Hoàn Kiếm <span>(Ví dụ)</span></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="cuisine-card fade-in" style="transition-delay: 0.2s;">
+                    <img src="https://scontent.fhan2-4.fna.fbcdn.net/v/t1.15752-9/491015708_597377250010740_5108113940427598349_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeGF_-CYDmHx4f9Ev4R839Zu7DoygujCWpXsOjKC6MJalUtnO1H4-5mATisluJXqeGg7-TaCCpAlE_8CGHBxYfP8&_nc_ohc=kT8kTUIlgfkQ7kNvwFwPaSv&_nc_oc=AdlDLnhHvNHGj4D5XOFK0lbeWuikfdifk2_3tITZQPTSEKVr5uawJMqjneIoXHMb-1g&_nc_zt=23&_nc_ht=scontent.fhan2-4.fna&oh=03_Q7cD2AEFmglPwtsqy-KwMFvrC9XNzcQB9JMPXcdcHLGiQXa5ZQ&oe=682CBDA3" alt="Cốm Hà Nội"> <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-2">Cốm - Quà tặng mùa thu</h4> <p class="text-gray-700 text-sm mb-3">Hạt lúa non xanh mướt, dẻo thơm, gói trong lá sen, mang hương vị đặc trưng của mùa thu Hà Nội.</p> <h5 class="text-sm font-semibold text-gray-800 mb-2">Địa chỉ gợi ý:</h5>
+                        <ul class="address-list">
+                            <li>Cốm Làng Vòng - Đường Trần Thái Tông, Cầu Giấy <span>(Nổi tiếng - Ví dụ)</span></li> <li>Các gánh hàng rong mùa thu - Khu vực Phố Cổ, Hồ Gươm <span>(Theo mùa - Ví dụ)</span></li> </ul>
+                    </div>
+                </div>
+                 <div class="cuisine-card fade-in" style="transition-delay: 0.3s;">
+                    <img src="https://scontent.fhan2-5.fna.fbcdn.net/v/t1.15752-9/491002595_857389253237230_2826929702027485943_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeHilIPmooTNDQE8ch9lLPsyEKNJb0AZl1EQo0lvQBmXUffklwqHRg97aeHZj5qvOFSJftJxxwk0mD69swXK67Sb&_nc_ohc=-OKnNG8SOwwQ7kNvwGITPbm&_nc_oc=AdkV-t1mxZD4pW7wHMgfYxj247xTDiIe9F9EjCTAraWMHss5JwWwcwsMcG1g5dhc-ZU&_nc_zt=23&_nc_ht=scontent.fhan2-5.fna&oh=03_Q7cD2AHom_p0cuPiZ6m0wI5LR3jjmS5UbcBKT9iwB32VtiKSjg&oe=682C9386" alt="Bánh Mì Hà Nội">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-2">Bánh Mì</h4>
+                        <p class="text-gray-700 text-sm mb-3">Ổ bánh mì giòn rụm với đa dạng nhân như pate, thịt nướng, trứng, chả...</p>
+                         <h5 class="text-sm font-semibold text-gray-800 mb-2">Địa chỉ gợi ý:</h5>
+                        <ul class="address-list">
+                            <li>Bánh Mì Phố Huế - 118 Phố Huế, Hai Bà Trưng <span>(Ví dụ)</span></li>
+                            <li>Bánh Mì Dân Tổ - Ngã ba Trần Nhật Duật - Cao Thắng <span>(Bán đêm - Ví dụ)</span></li>
+                            <li>Bánh Mì Chảo - Nhiều địa chỉ <span>(Ví dụ)</span></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="cuisine-card fade-in" style="transition-delay: 0.4s;">
+                    <img src="https://i.pinimg.com/736x/5e/36/ae/5e36ae901aa7f54da0f192e306367274.jpg" alt="Cà Phê Trứng">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-2">Cà Phê Trứng</h4>
+                        <p class="text-gray-700 text-sm mb-3">Thức uống độc đáo với lớp kem trứng béo ngậy hòa quyện vị đắng cà phê.</p>
+                         <h5 class="text-sm font-semibold text-gray-800 mb-2">Địa chỉ gợi ý:</h5>
+                        <ul class="address-list">
+                            <li>Cafe Giảng - 39 Nguyễn Hữu Huân, Hoàn Kiếm <span>(Nguyên bản - Ví dụ)</span></li>
+                            <li>Cafe Đinh - 13 Đinh Tiên Hoàng, Hoàn Kiếm <span>(View Hồ Gươm - Ví dụ)</span></li>
+                            <li>Loading T - 8 Chân Cầm, Hoàn Kiếm <span>(Không gian cổ - Ví dụ)</span></li>
+                        </ul>
+                    </div>
+                </div>
+                 <div class="cuisine-card fade-in" style="transition-delay: 0.5s;">
+                    <img src="https://scontent.fhan20-1.fna.fbcdn.net/v/t1.15752-9/490436242_1010827223971376_8550313516930035746_n.jpg?_nc_cat=103&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEl6qkC1HpIS50fctMLLYZ0olqMtDqrCNCiWoy0OqsI0OtgA-yqJ2epMY-ibCrczWjf8KQIRk6XB7Fz6DDjKItd&_nc_ohc=qxZED14U8zwQ7kNvwHrfDln&_nc_oc=Adkq1SPIUlr6NJj_-8MHVWsuAjvw2EqWJSt6vOzNdf_7JUiHbSaWcRLOpy5Yb0V5fyg&_nc_zt=23&_nc_ht=scontent.fhan20-1.fna&oh=03_Q7cD2AGiOBY8WvbgeV5wI4NS74rL8B2-nZ1QiGQt6sAyZ2RMSw&oe=682CC1CA" alt="Bún Đậu Mắm Tôm"> <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-2">Bún Đậu Mắm Tôm</h4> <p class="text-gray-700 text-sm mb-3">Mẹt bún dân dã gồm bún lá, đậu phụ rán giòn, chả cốm, thịt luộc, lòng dồi và mắm tôm pha tắc.</p> <h5 class="text-sm font-semibold text-gray-800 mb-2">Địa chỉ gợi ý:</h5>
+                        <ul class="address-list">
+                            <li>Bún đậu Hàng Khay - Ngõ 31 Hàng Khay, Hoàn Kiếm <span>(Ví dụ)</span></li> <li>Bún đậu Trung Hương - 49 Ngõ Phất Lộc, Hoàn Kiếm <span>(Ví dụ)</span></li> </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="tours" class="py-20 md:py-32 bg-gradient-to-bl from-indigo-100 to-purple-100">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl md:text-5xl font-heading font-bold text-indigo-800 mb-4">Lên Kế Hoạch Chuyến Đi Hoàn Hảo</h2> <p class="text-lg text-gray-700 max-w-2xl mx-auto">Khám phá các tour du lịch hấp dẫn và lựa chọn chỗ ở phù hợp tại Hà Nội.</p> </div>
+            <div class="mb-16">
+                <h3 class="text-3xl font-heading font-semibold text-gray-700 mb-8 text-center fade-in">Gợi Ý Tour Du Lịch</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden fade-in transform hover:scale-105 transition duration-300">
+                        <img src="https://i.pinimg.com/736x/fc/f4/c6/fcf4c6e0e7d6644a7d86106bc036c4ca.jpg" alt="City Tour Hà Nội" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <h4 class="text-xl font-semibold font-heading text-red-700 mb-2">Tour Khám Phá Trung Tâm</h4>
+                            <p class="text-gray-600 text-sm mb-4">Tham quan các điểm di tích lịch sử nổi tiếng như Hồ Gươm, Văn Miếu, Phố Cổ...</p>
+                             <button class="info-modal-trigger modal-trigger inline-block bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition text-sm"
+                                data-modal-target="#info-modal"
+                                data-title="Tour Khám Phá Trung Tâm"
+                                data-image="https://i.pinimg.com/736x/fc/f4/c6/fcf4c6e0e7d6644a7d86106bc036c4ca.jpg"
+                                data-details="Khám phá những địa danh mang tính biểu tượng của Hà Nội trong một ngày. Lịch trình bao gồm: Hồ Gươm, Đền Ngọc Sơn, Văn Miếu - Quốc Tử Giám, Lăng Bác (bên ngoài), Chùa Một Cột, và dạo quanh Phố Cổ bằng xích lô.\n\n<div class='modal-practical-info'><p><strong>Thời lượng:</strong> Cả ngày (khoảng 8 tiếng).</p><p><strong>Bao gồm:</strong> Xe đưa đón, hướng dẫn viên, vé tham quan (một số điểm), bữa trưa.</p><p><strong>Giá tham khảo:</strong> Liên hệ.</p></div>">
+                                Xem chi tiết & Đặt tour
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden fade-in transform hover:scale-105 transition duration-300" style="transition-delay: 0.1s;">
+                         <img src="https://i.pinimg.com/736x/13/a8/b6/13a8b6277659400dff429ee8bcccabd2.jpg" alt="Food Tour Hà Nội" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <h4 class="text-xl font-semibold font-heading text-red-700 mb-2">Tour Ẩm Thực Đường Phố</h4>
+                            <p class="text-gray-600 text-sm mb-4">Thưởng thức những món ăn đặc sản không thể bỏ qua của Hà Nội.</p>
+                             <button class="info-modal-trigger modal-trigger inline-block bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition text-sm"
+                                data-modal-target="#info-modal"
+                                data-title="Tour Ẩm Thực Đường Phố"
+                                data-image="https://i.pinimg.com/736x/13/a8/b6/13a8b6277659400dff429ee8bcccabd2.jpg"
+                                data-details="Theo chân hướng dẫn viên địa phương len lỏi vào các ngõ nhỏ để thưởng thức những món ăn đường phố ngon nhất: Phở, Bún Chả, Bánh Cuốn, Nem Rán, Cà Phê Trứng và nhiều món ăn vặt hấp dẫn khác.\n\n<div class='modal-practical-info'><p><strong>Thời lượng:</strong> Nửa ngày (khoảng 3-4 tiếng).</p><p><strong>Bao gồm:</strong> Hướng dẫn viên, chi phí các món ăn trong chương trình.</p><p><strong>Giá tham khảo:</strong> Liên hệ.</p></div>">
+                                Xem chi tiết & Đặt tour
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden fade-in transform hover:scale-105 transition duration-300" style="transition-delay: 0.2s;">
+                         <img src="https://scontent.fhan2-5.fna.fbcdn.net/v/t1.15752-9/490993069_1190474169196673_8400764420121891338_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeG1SaRCtYrPzAwIP_v5iyd0J3CGEETw6LUncIYQRPDota3KzjvjxmIudNCPIFUYcpXOID5pxCLNWKU4Zq-zi4_N&_nc_ohc=30hYuXYsTbAQ7kNvwHhZahW&_nc_oc=AdnHFShVt2WSt5L3g4tDMCDsqZARpUVv2RH0jN-35H81ispvLdiVe5FuHQnv36pB1Zs&_nc_zt=23&_nc_ht=scontent.fhan2-5.fna&oh=03_Q7cD2AEMRk960Fnsn2yk1VamQu4iZVL1U4MQ-iSsSzIHjvc8Pg&oe=682CA005" alt="Làng Nghề Tour" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <h4 class="text-xl font-semibold font-heading text-red-700 mb-2">Tour Tham Quan Làng Nghề</h4>
+                            <p class="text-gray-600 text-sm mb-4">Khám phá làng gốm Bát Tràng, làng lụa Vạn Phúc và các làng nghề khác.</p>
+                             <button class="info-modal-trigger modal-trigger inline-block bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition text-sm"
+                                data-modal-target="#info-modal"
+                                data-title="Tour Tham Quan Làng Nghề"
+                                data-image="https://scontent.fhan2-5.fna.fbcdn.net/v/t1.15752-9/490993069_1190474169196673_8400764420121891338_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeG1SaRCtYrPzAwIP_v5iyd0J3CGEETw6LUncIYQRPDota3KzjvjxmIudNCPIFUYcpXOID5pxCLNWKU4Zq-zi4_N&_nc_ohc=30hYuXYsTbAQ7kNvwHhZahW&_nc_oc=AdnHFShVt2WSt5L3g4tDMCDsqZARpUVv2RH0jN-35H81ispvLdiVe5FuHQnv36pB1Zs&_nc_zt=23&_nc_ht=scontent.fhan2-5.fna&oh=03_Q7cD2AEMRk960Fnsn2yk1VamQu4iZVL1U4MQ-iSsSzIHjvc8Pg&oe=682CA005"
+                                data-details="Tham quan làng gốm Bát Tràng để xem quy trình làm gốm và mua sắm. Ghé thăm làng lụa Vạn Phúc (Hà Đông) để tìm hiểu về nghề dệt lụa tơ tằm truyền thống.\n\n<div class='modal-practical-info'><p><strong>Thời lượng:</strong> Nửa ngày hoặc cả ngày (tùy chọn).</p><p><strong>Bao gồm:</strong> Xe đưa đón, hướng dẫn viên, phí tham quan (nếu có).</p><p><strong>Giá tham khảo:</strong> Liên hệ.</p></div>">
+                                Xem chi tiết & Đặt tour
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-3xl font-heading font-semibold text-gray-700 mb-8 text-center fade-in">Gợi Ý Chỗ Ở</h3>
+                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden fade-in transform hover:scale-105 transition duration-300">
+                         <img src="https://ik.imagekit.io/tvlk/image/imageResource/2025/02/18/1739862113406-83c784cda20ec3da79804ca2e789e518.jpeg" alt="Khách sạn sang trọng" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <h4 class="text-xl font-semibold font-heading text-blue-700 mb-2">Khách Sạn Cao Cấp</h4>
+                            <p class="text-gray-600 text-sm mb-4">Tận hưởng dịch vụ đẳng cấp và tiện nghi hiện đại tại trung tâm.</p>
+                             <a href="https://www.agoda.com/city/hanoi-vn.html?site_id=1922877&tag=c89a3094-0ba4-4425-a232-705ae9a5c3e5&gad_source=1&device=c&network=g&adid=693479638510&rand=11022281524323059403&expid=&adpos=&aud=kwd-305790417260&gclid=CjwKCAjwk43ABhBIEiwAvvMEB88bGtYAN0j1PVUxKT8At7pvyevBMXu57BxU0sfBfr6RAqZRBzEgFRoCz6UQAvD_BwE&pslc=1&ds=Wz3qAY49XaSPNMwp" target="_blank" class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm">Tìm khách sạn</a>
+                        </div>
+                    </div>
+                     <div class="bg-white rounded-lg shadow-lg overflow-hidden fade-in transform hover:scale-105 transition duration-300" style="transition-delay: 0.1s;">
+                         <img src="https://cf.bstatic.com/xdata/images/hotel/max1024x768/161544759.jpg?k=6c15691bc029eab447afe04c4970fa6624115e1508b1bb206b93ad2e21476ce8&o=&hp=1" alt="Boutique Hotel" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <h4 class="text-xl font-semibold font-heading text-pink-700 mb-2">Boutique Hotel & Homestay</h4>
+                            <p class="text-gray-600 text-sm mb-4">Trải nghiệm không gian độc đáo, ấm cúng và gần gũi với văn hóa địa phương.</p>
+                             <a href="https://www.booking.com/searchresults.vi.html?aid=318615&label=New_English_EN_VI_27027142225-H8e7AwH0Qvg02qi5WZOlwwS637942138799%3Apl%3Ata%3Ap1%3Ap2%3Aac%3Aap%3Aneg%3Afi%3Atidsa-199489749865%3Alp9074076%3Ali%3Adec%3Adm%3Aag27027142225%3Acmp400679185&sid=3c82d36a72b721eafccb5bfed8245baa&closed_msg=8810447&dest_id=-3714993&dest_type=city&hlrd=14&" target="_blank" class="inline-block bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700 transition text-sm">Tìm chỗ ở</a>
+                        </div>
+                    </div>
+                     <div class="bg-white rounded-lg shadow-lg overflow-hidden fade-in transform hover:scale-105 transition duration-300" style="transition-delay: 0.2s;">
+                         <img src="https://mia.vn/media/uploads/blog-du-lich/homestay-ha-noi-lii-homestay-1708271304.jpg" alt="Căn hộ dịch vụ" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <h4 class="text-xl font-semibold font-heading text-orange-700 mb-2">Căn Hộ Dịch Vụ</h4>
+                            <p class="text-gray-600 text-sm mb-4">Lựa chọn linh hoạt cho chuyến đi dài ngày hoặc gia đình.</p>
+                             <a href="https://www.booking.com/design/city/vn/hanoi.vi.html" target="_blank" class="inline-block bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 transition text-sm">Tìm căn hộ</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="people" class="py-20 md:py-32 bg-gradient-to-br from-rose-50 to-sky-100">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl md:text-5xl font-heading font-bold text-sky-800 mb-4">Gặp Gỡ Người Hà Nội</h2> <p class="text-lg text-gray-700 max-w-2xl mx-auto">Cảm nhận sự thanh lịch, tài hoa và lòng mến khách của người Tràng An.</p> </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="fade-in rounded-lg overflow-hidden shadow-md"> <img src="https://scontent.fhan2-4.fna.fbcdn.net/v/t1.15752-9/490979353_1202074111408811_6326195756713615063_n.jpg?_nc_cat=105&ccb=1-7&_nc_sid=9f807c&_nc_ohc=cBuR9tF9GMIQ7kNvwGout2E&_nc_oc=AdlcMsQGFssbk-JGnccFdG170sqyOni4oxoG65w-sneieGrbBGFxbfvkOZZ6rLV3isA&_nc_zt=23&_nc_ht=scontent.fhan2-4.fna&oh=03_Q7cD2AFlgYIYwjP9TzBzl-TSQGDA_faQP4BkSIwAQR6_mVNmGQ&oe=682F2E1B" alt="Người Hà Nội 1" class="w-full h-full object-cover transform hover:scale-105 transition duration-300"> </div>
+                <div class="fade-in rounded-lg overflow-hidden shadow-md" style="transition-delay: 0.1s;"> <img src="https://scontent.fhan2-5.fna.fbcdn.net/v/t1.15752-9/471920583_2057086731383849_7145204692669618471_n.jpg?_nc_cat=107&ccb=1-7&_nc_sid=9f807c&_nc_ohc=7aGp1FWPArMQ7kNvwGS_jiC&_nc_oc=AdkmaxFd0YcwfVJIa8izGNqLOAYCWuuCIdmUiNcQ2tCwG4Ft-CyjaRRj1Jnio_T9HhY&_nc_zt=23&_nc_ht=scontent.fhan2-5.fna&oh=03_Q7cD2AGMxEIatwqGCcOJEo6NnZQq5A4g7M5FN0Y5egx-si8HMg&oe=682F18E0" alt="Người Hà Nội 2" class="w-full h-full object-cover transform hover:scale-105 transition duration-300"> </div>
+                <div class="fade-in rounded-lg overflow-hidden shadow-md" style="transition-delay: 0.2s;"> <img src="https://scontent.fhan2-5.fna.fbcdn.net/v/t1.15752-9/406923300_1748853825620795_3148976665598220965_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeFNZRYvsrL-hcb3qNfB5I5sQ3uBJh9PNmRDe4EmH082ZEzNdu3eesJBuYjJQ55Nn3K4TFebJeBHXMfL93lkMSZP&_nc_ohc=evJyfTTYgesQ7kNvwGQWKTS&_nc_oc=Adn1jQRcPhJFHGrAxFulgmvnyjrVuiidT6L9sa8PtLQGB5dfRe6slh4vqAwrtnFDo8o&_nc_zt=23&_nc_ht=scontent.fhan2-5.fna&oh=03_Q7cD2AGanQX9tBqExZN72UQ8ic2FmEIAVztvmAQtl-aSp6bAjw&oe=682C2F2C" alt="Người Hà Nội 3" class="w-full h-full object-cover transform hover:scale-105 transition duration-300"> </div>
+                <div class="fade-in rounded-lg overflow-hidden shadow-md" style="transition-delay: 0.3s;"> <img src="https://scontent.fhan2-4.fna.fbcdn.net/v/t1.15752-9/491024995_1342389350347931_4729752344550778599_n.jpg?_nc_cat=100&ccb=1-7&_nc_sid=9f807c&_nc_eui2=AeEKAlDk4uZd0X9X4oUOjaJr9R-1pvPX9-b1H7Wm89f35gMTO4awmi6KucN7FkX9vvq5aAwLi5opcj_stUcXl9EE&_nc_ohc=bLCrLykoKF0Q7kNvwELF4ZB&_nc_oc=AdlQtwiWnL4QVmftZNlGwdFy_BDmd8JB-M95bpreK6EduVs14y_vd2h3eDOtxBqAFzY&_nc_zt=23&_nc_ht=scontent.fhan2-4.fna&oh=03_Q7cD2AHL_7rxnqzoTvmKnXjS9hJAmoYkoJ-foQESlXfR9R_UBA&oe=682C195C" alt="Người Hà Nội 4" class="w-full h-full object-cover transform hover:scale-105 transition duration-300"> </div>
+            </div>
+             <p class="text-center text-gray-700 mt-12 max-w-3xl mx-auto fade-in leading-relaxed">
+                Người Hà Nội luôn chào đón du khách bằng nụ cười thân thiện và sự giúp đỡ nhiệt tình. Đừng ngần ngại bắt chuyện và tìm hiểu về cuộc sống nơi đây.
+            </p>
+        </div>
+    </section>
+
+    <section id="contact" class="py-20 md:py-32 bg-gray-800 text-gray-300">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 fade-in">
+                <h2 class="text-4xl md:text-5xl font-heading font-bold text-white mb-4">Liên Hệ & Hỗ Trợ</h2> <p class="text-lg text-gray-400 max-w-2xl mx-auto">Chúng tôi luôn sẵn lòng giải đáp thắc mắc và hỗ trợ bạn.</p>
+            </div>
+            <div class="max-w-lg mx-auto"> <div class="fade-in">
+                    <h3 class="text-2xl font-semibold text-white mb-6 font-heading text-center">Thông Tin Liên Hệ</h3>
+                    <p class="mb-4 flex items-start">
+                        <i class="fas fa-map-marker-alt w-5 mr-3 mt-1 text-red-400"></i>
+                        <span>THPT Lê Hồng Phong, Phổ Yên, Việt Nam</span>
+                    </p>
+                    <p class="mb-4 flex items-center">
+                        <i class="fas fa-phone-alt w-5 mr-3 text-red-400"></i>
+                        <a href="tel:+84123456789" class="hover:text-red-400 transition duration-300">[+84] 0869454308</a>  (Hotline Tư Vấn Du Lịch)
+                    </p>
+                    <p class="mb-6 flex items-center">
+                        <i class="fas fa-envelope w-5 mr-3 text-red-400"></i>
+                        <a href="mailto:booking@hanoitravel.vn" class="hover:text-red-400 transition duration-300">lthanhdat007@gmail.com</a>
+                    </p>
+                    <h4 class="text-xl font-semibold text-white mb-3 font-heading text-center mt-8">Kết nối mạng xã hội</h4>
+                    <div class="flex justify-center space-x-6"> 
+                        <a href="https://www.facebook.com/thanh.at.467480?mibextid=wwXIfr&mibextid=wwXIfr" target="_blank" class="text-gray-400 hover:text-white transition duration-300 text-2xl"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.instagram.com/_thdat.7/" target="_blank" class="text-gray-400 hover:text-white transition duration-300 text-2xl"><i class="fab fa-instagram"></i></a>
+                        <a href="https://youtu.be/KdEEVocbv9g?si=tECnL7uleVsfvxxF" target="_blank" class="text-gray-400 hover:text-white transition duration-300 text-2xl"><i class="fab fa-youtube"></i></a>
+                    </div>
+                 </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-gray-900 text-gray-500 py-8 text-center text-sm">
+        <div class="container mx-auto px-6">
+             <p class="mb-2">© 2025 Hanoi Travel. Chuyên trang quảng bá du lịch Hà Nội.</p>
+             <p>
+                 <button data-modal-target="#privacy-modal" class="modal-trigger bg-transparent border-none text-gray-500 hover:text-white hover:underline cursor-pointer p-0 mx-2 focus:outline-none">Chính sách bảo mật</button> |
+                 <button data-modal-target="#terms-modal" class="modal-trigger bg-transparent border-none text-gray-500 hover:text-white hover:underline cursor-pointer p-0 mx-2 focus:outline-none">Điều khoản sử dụng</button> |
+                 <button data-modal-target="#tips-modal" class="modal-trigger bg-transparent border-none text-gray-500 hover:text-white hover:underline cursor-pointer p-0 mx-2 focus:outline-none">Mẹo du lịch</button>
+             </p>
+        </div>
+    </footer>
+
+    <div class="floating-notification-button"> <button data-modal-target="#notification-panel" class="modal-trigger bg-blue-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition duration-300 focus:outline-none"> <i class="fas fa-bell text-2xl"></i> </button> </div>
+    <div class="floating-chat-button"> <button id="toggle-chat-button" class="bg-red-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-red-700 transition duration-300 focus:outline-none"> <i class="fas fa-comments text-2xl"></i> </button> </div>
+
+    <div id="chat-widget" class="modal"> <div class="modal-content p-0"> <div id="chat-header"> <span>Trợ lý Du lịch Hà Nội</span> <button id="close-chat-button" class="modal-close-button">×</button> </div> <div id="chat-body"> <div class="chat-message bot-message">Xin chào! Tôi có thể giúp bạn lên kế hoạch du lịch Hà Nội?</div> </div> <div id="chat-input-container"> <input type="text" id="chat-input" placeholder="Hỏi về tour, khách sạn..."> <button id="send-button"> <i class="fas fa-paper-plane"></i> </button> </div> </div> </div>
+    <div id="info-modal" class="modal"> <div id="modal-content" class="modal-content"> <button class="modal-close-button">×</button> <img id="modal-image" src="" alt="Hình ảnh địa danh" class="hidden"> <h3 id="modal-title" class="modal-title"></h3> <p id="modal-details"></p> <form id="modal-booking-form" onsubmit="event.preventDefault(); closeAllModals(); alert('Yêu cầu của bạn đã được ghi nhận (Demo)! Chúng tôi sẽ liên hệ lại sớm.');"> <hr class="my-6 border-gray-300"> <h4>Đặt Tour / Gửi Yêu Cầu (Demo)</h4> <div> <label for="modal-date">Ngày mong muốn:</label> <input type="date" id="modal-date" name="modal-date" class="bg-gray-50"> </div> <div> <label for="modal-name">Họ và Tên:</label> <input type="text" id="modal-name" name="modal-name" required placeholder="Nhập họ tên"> </div> <div> <label for="modal-phone">Số Điện Thoại:</label> <input type="tel" id="modal-phone" name="modal-phone" required placeholder="Nhập số điện thoại"> </div> <div> <label for="modal-email">Email:</label> <input type="email" id="modal-email" name="modal-email" required placeholder="Nhập email"> </div> <button type="submit">Gửi Yêu Cầu Đặt Tour</button> </form> </div> </div>
+    <div id="notification-panel" class="modal"> <div id="notification-content" class="modal-content"> <button class="modal-close-button">×</button> <h3 id="notification-title" class="modal-title">Tin Tức Du Lịch</h3> <div class="notification-item"> <h4>Ưu đãi đặt tour sớm mùa hè!</h4> <p>Giảm giá 10% cho các tour Hà Nội đặt trước ngày 30/4.</p> <small>17 tháng 4, 2025</small> </div> <div class="notification-item"> <h4>Khách sạn mới khai trương tại Phố Cổ</h4> <p>Trải nghiệm khách sạn boutique mới với phong cách độc đáo.</p> <small>16 tháng 4, 2025</small> </div> <div class="notification-item"> <h4>Lễ hội ẩm thực đường phố cuối tuần này</h4> <p>Đừng bỏ lỡ cơ hội thưởng thức tinh hoa ẩm thực tại Quảng trường Đông Kinh Nghĩa Thục.</p> <small>15 tháng 4, 2025</small> </div> </div> </div>
+    <div id="tips-modal" class="modal"> <div id="tips-content" class="modal-content"> <button class="modal-close-button">×</button> <h3 id="tips-title" class="modal-title">Mẹo Du Lịch Hà Nội Bỏ Túi</h3> <ul> <li> <strong>Thời điểm lý tưởng:</strong> Mùa thu (tháng 9-11) với tiết trời mát mẻ, khô ráo, nắng vàng là đẹp nhất. Mùa xuân (tháng 3-4) cũng khá dễ chịu. Tránh mùa hè quá nóng ẩm hoặc mùa đông quá lạnh. </li> <li> <strong>Di chuyển:</strong> Xe ôm công nghệ (Grab/Gojek) tiện lợi và giá cả hợp lý. Taxi cũng phổ biến. Thuê xe máy nếu bạn tự tin tay lái. Xe buýt rẻ nhưng cần tìm hiểu lộ trình. Đi bộ và xích lô rất tuyệt để khám phá Phố Cổ. </li> <li> <strong>Mặc cả (Bargain):</strong> Khi mua sắm ở chợ hoặc các cửa hàng nhỏ (không niêm yết giá), đừng ngại mặc cả để có giá tốt hơn. Hãy bắt đầu với khoảng 50-70% giá người bán đưa ra. </li> <li> <strong>An toàn:</strong> Cẩn thận với tư trang cá nhân ở nơi đông người. Sang đường cần chú ý quan sát vì giao thông khá đông đúc. </li> <li> <strong>Ẩm thực:</strong> Đừng bỏ lỡ Phở, Bún Chả, Bánh Mì, Cà Phê Trứng, Bún Đậu Mắm Tôm. Nên thử cả đồ ăn vặt vỉa hè (chọn hàng trông sạch sẽ, đông khách). </li> <li> <strong>Trang phục:</strong> Mang theo quần áo phù hợp với mùa. Luôn có trang phục lịch sự, kín đáo nếu bạn dự định tham quan chùa, đền, Lăng Bác. </li> <li> <strong>Sim điện thoại & Wifi:</strong> Dễ dàng mua sim 4G tại sân bay hoặc các cửa hàng viễn thông. Wifi có ở hầu hết khách sạn, quán cà phê. </li> <li> <strong>Tiền tệ:</strong> Việt Nam Đồng (VNĐ). Có thể đổi tiền tại sân bay, ngân hàng hoặc các tiệm vàng được cấp phép. ATM khá phổ biến. </li> </ul> </div> </div>
+    <div id="auth-modal" class="modal"> <div id="auth-content" class="modal-content"> <button class="modal-close-button">×</button> <div id="login-view" class="auth-form"> <h3 class="modal-title">Đăng Nhập</h3> <form onsubmit="event.preventDefault(); closeAllModals(); alert('Đăng nhập thành công! (Demo)');"> <div> <label for="login-email">Email hoặc Tên đăng nhập:</label> <input type="text" id="login-email" name="login-email" required placeholder="Nhập email của bạn"> </div> <div> <label for="login-password">Mật khẩu:</label> <input type="password" id="login-password" name="login-password" required placeholder="Nhập mật khẩu"> </div> <button type="submit">Đăng Nhập Ngay</button> </form> <button type="button" class="google-signin-button" onclick="closeAllModals(); alert('Đăng nhập bằng Google! (Demo)');"> <img src="https://placehold.co/20x20/ffffff/000000?text=G" alt="Google logo"> <span>Đăng nhập bằng Google</span> </button> <p class="auth-switch-link"> Chưa có tài khoản? <button type="button" id="show-register-view">Đăng ký ngay</button> </p> </div> <div id="register-view" class="auth-form hidden"> <h3 class="modal-title">Đăng Ký Tài Khoản</h3> <form onsubmit="event.preventDefault(); closeAllModals(); alert('Đăng ký thành công! (Demo)');"> <div> <label for="register-name">Họ và Tên:</label> <input type="text" id="register-name" name="register-name" required placeholder="Nhập họ tên"> </div> <div> <label for="register-email">Email:</label> <input type="email" id="register-email" name="register-email" required placeholder="Nhập email"> </div> <div> <label for="register-phone">Số điện thoại:</label> <input type="tel" id="register-phone" name="register-phone" placeholder="Nhập số điện thoại"> </div> <div> <label for="register-password">Mật khẩu:</label> <input type="password" id="register-password" name="register-password" required placeholder="Tạo mật khẩu"> </div> <div> <label for="register-confirm-password">Xác nhận Mật khẩu:</label> <input type="password" id="register-confirm-password" name="register-confirm-password" required placeholder="Nhập lại mật khẩu"> </div> <button type="submit">Tạo Tài Khoản</button> </form> <p class="auth-switch-link"> Đã có tài khoản? <button type="button" id="show-login-view">Đăng nhập</button> </p> </div> </div> </div>
+    <div id="privacy-modal" class="modal"> <div id="privacy-content" class="modal-content"> <button class="modal-close-button">×</button> <h3 id="privacy-title" class="modal-title">Chính Sách Bảo Mật</h3> <p><strong>(Nội dung Placeholder)</strong></p> <p>Chúng tôi cam kết bảo vệ thông tin cá nhân của bạn. Chính sách này mô tả cách chúng tôi thu thập, sử dụng và bảo vệ dữ liệu của bạn khi bạn truy cập trang web này.</p> <p><strong>1. Thông tin thu thập:</strong> Chúng tôi có thể thu thập thông tin bạn cung cấp tự nguyện qua form liên hệ (nếu có) như tên, email, số điện thoại.</p> <p><strong>2. Mục đích sử dụng:</strong> Thông tin được sử dụng để phản hồi yêu cầu, tư vấn dịch vụ du lịch và cải thiện trải nghiệm người dùng.</p> <p><strong>3. Chia sẻ thông tin:</strong> Chúng tôi không chia sẻ thông tin cá nhân của bạn với bên thứ ba trừ khi có sự đồng ý của bạn hoặc theo yêu cầu pháp luật.</p> <p><strong>4. Bảo mật:</strong> Chúng tôi áp dụng các biện pháp kỹ thuật và tổ chức phù hợp để bảo vệ dữ liệu của bạn.</p> <p><strong>5. Cookies:</strong> Trang web có thể sử dụng cookies để cải thiện trải nghiệm. Bạn có thể quản lý cookies trong cài đặt trình duyệt.</p> <p><strong>6. Thay đổi chính sách:</strong> Chính sách này có thể được cập nhật. Vui lòng truy cập định kỳ để biết thông tin mới nhất.</p> <p><em>(Đây là nội dung mẫu, cần được thay thế bằng chính sách bảo mật thực tế của bạn.)</em></p> </div> </div>
+    <div id="terms-modal" class="modal"> <div id="terms-content" class="modal-content"> <button class="modal-close-button">×</button> <h3 id="terms-title" class="modal-title">Điều Khoản Sử Dụng</h3> <p><strong>(Nội dung Placeholder)</strong></p> <p>Chào mừng bạn đến với Hanoi Travel! Bằng việc truy cập và sử dụng trang web này, bạn đồng ý tuân thủ các điều khoản và điều kiện sau:</p> <p><strong>1. Nội dung trang web:</strong> Thông tin trên trang web chỉ mang tính tham khảo. Chúng tôi cố gắng đảm bảo tính chính xác nhưng không chịu trách nhiệm hoàn toàn về mọi sai sót hoặc thiếu sót.</p> <p><strong>2. Sử dụng thông tin:</strong> Bạn có thể xem, tải và in nội dung cho mục đích cá nhân, phi thương mại. Mọi hình thức sao chép, phân phối lại vì mục đích thương mại đều cần sự cho phép bằng văn bản.</p> <p><strong>3. Liên kết bên ngoài:</strong> Trang web có thể chứa liên kết đến các trang web của bên thứ ba. Chúng tôi không chịu trách nhiệm về nội dung hoặc tính bảo mật của các trang web đó.</p> <p><strong>4. Miễn trừ trách nhiệm:</strong> Chúng tôi không chịu trách nhiệm cho bất kỳ tổn thất hoặc thiệt hại nào phát sinh từ việc sử dụng trang web này.</p> <p><strong>5. Thay đổi điều khoản:</strong> Chúng tôi có quyền thay đổi các điều khoản này bất kỳ lúc nào. Việc bạn tiếp tục sử dụng trang web sau thay đổi đồng nghĩa với việc bạn chấp nhận các điều khoản mới.</p> <p><em>(Đây là nội dung mẫu, cần được thay thế bằng điều khoản sử dụng thực tế của bạn.)</em></p> </div> </div>
+
+
+    <script>
+    // Đảm bảo DOM đã sẵn sàng trước khi chạy script
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // --- Element Selections ---
+        const allModals = document.querySelectorAll('.modal');
+        const infoModal = document.getElementById('info-modal');
+        const authModal = document.getElementById('auth-modal');
+        const loginView = document.getElementById('login-view');
+        const registerView = document.getElementById('register-view');
+        const chatWidget = document.getElementById('chat-widget'); // Chat widget cũng là một loại modal
+
+        // --- Helper Functions ---
+        function isAnyModalOpen() {
+            // Kiểm tra tất cả các phần tử có class 'modal' và 'visible'
+            return document.querySelector('.modal.visible') !== null;
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.modal.visible').forEach(modal => {
+                modal.classList.remove('visible');
+            });
+             // Chỉ khôi phục scroll nếu không còn modal nào mở
+             setTimeout(() => {
+                 if (!isAnyModalOpen()) {
+                    document.body.style.overflow = '';
+                 }
+             }, 50); // Delay nhỏ để đảm bảo class đã được gỡ bỏ
+        }
+
+        function openModal(modalElement) {
+             if (modalElement) {
+                modalElement.classList.add('visible');
+                document.body.style.overflow = 'hidden';
+            } else {
+                console.error("Attempted to open a non-existent modal element.");
+            }
+        }
+
+        // --- Event Listeners ---
+
+        // 1. Mở Modals bằng Trigger Buttons (Sử dụng data-modal-target)
+        document.addEventListener('click', function(event) {
+            const trigger = event.target.closest('.modal-trigger');
+            if (trigger) {
+                const modalId = trigger.dataset.modalTarget;
+                const modalElement = document.querySelector(modalId);
+
+                if (modalElement) {
+                     // Xử lý riêng cho Info Modal để cập nhật nội dung
+                     if (modalId === '#info-modal' && trigger.classList.contains('info-modal-trigger')) {
+                         const title = trigger.dataset.title || 'Thông tin chi tiết';
+                         const details = trigger.dataset.details || 'Không có thông tin chi tiết.';
+                         const imageUrl = trigger.dataset.image;
+
+                         const modalTitleEl = infoModal.querySelector('.modal-title'); // Sử dụng class chung
+                         const modalDetailsEl = infoModal.querySelector('#modal-details');
+                         const modalImageEl = infoModal.querySelector('#modal-image');
+                         const bookingForm = infoModal.querySelector('#modal-booking-form');
+
+                         if(modalTitleEl) modalTitleEl.textContent = title;
+                         if(modalDetailsEl) modalDetailsEl.innerHTML = details;
+                         if(modalImageEl){
+                              if (imageUrl) { modalImageEl.src = imageUrl; modalImageEl.alt = `Hình ảnh ${title}`; modalImageEl.classList.remove('hidden'); }
+                              else { modalImageEl.classList.add('hidden'); }
+                         }
+                         if (bookingForm) bookingForm.reset();
+                     }
+                     // Xử lý riêng cho Auth Modal để chọn view
+                     else if (modalId === '#auth-modal') {
+                         const viewToShow = trigger.dataset.view || 'login';
+                         if (loginView && registerView) {
+                             if (viewToShow === 'register') {
+                                 loginView.classList.add('hidden');
+                                 registerView.classList.remove('hidden');
+                             } else {
+                                 registerView.classList.add('hidden');
+                                 loginView.classList.remove('hidden');
+                             }
+                         }
+                     }
+                     // Mở modal chung
+                     openModal(modalElement);
+                } else {
+                     console.error(`Modal with selector "${modalId}" not found.`);
+                }
+            }
+
+            // Xử lý nút đóng modal chung
+            if (event.target.closest('.modal-close-button')) {
+                // Nếu là nút đóng chat widget, chỉ đóng chat widget
+                if (event.target.closest('#chat-widget')) {
+                     const chatWidgetEl = document.getElementById('chat-widget');
+                     if(chatWidgetEl) chatWidgetEl.classList.remove('visible');
+                } else {
+                    // Ngược lại, đóng tất cả các modal khác
+                    closeAllModals();
+                }
+            }
+
+            // Xử lý nút chuyển view trong Auth Modal
+            if (event.target.closest('#show-register-view')) {
+                 if(loginView && registerView) {
+                    loginView.classList.add('hidden');
+                    registerView.classList.remove('hidden');
+                 }
+            }
+            if (event.target.closest('#show-login-view')) {
+                 if(loginView && registerView) {
+                    registerView.classList.add('hidden');
+                    loginView.classList.remove('hidden');
+                 }
+            }
+        });
+
+        // 2. Đóng Modal bằng cách click vào Overlay
+         document.querySelectorAll('.modal').forEach(modal => {
+            // Bỏ qua chat widget vì nó không nên đóng khi click overlay
+            if (modal.id === 'chat-widget') return;
+
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    closeAllModals();
+                }
+            });
+        });
+
+
+        // 3. Đóng Modal bằng phím Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && isAnyModalOpen()) {
+                // Nếu chat widget đang mở, không đóng bằng Escape (tuỳ chọn)
+                // if (document.getElementById('chat-widget')?.classList.contains('visible')) return;
+                closeAllModals();
+            }
+        });
+
+        // --- Các logic khác ---
+
+        // Smooth Scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    const headerOffset = document.querySelector('header')?.offsetHeight || 70;
+                    const elementPosition = targetElement.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                    window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                    closeMenu();
+                }
+            });
+        });
+        // Mobile Menu Toggle
+        const menuToggle = document.getElementById('menu-toggle');
+        const closeMenuButton = document.getElementById('close-menu');
+        const menuOverlay = document.getElementById('menu-overlay');
+        const menuLinks = menuOverlay.querySelectorAll('.menu-link');
+        function openMenu() { menuOverlay?.classList.remove('opacity-0', 'pointer-events-none'); menuOverlay?.classList.add('opacity-100'); }
+        function closeMenu() { menuOverlay?.classList.add('opacity-0', 'pointer-events-none'); menuOverlay?.classList.remove('opacity-100'); }
+        if (menuToggle && menuOverlay && closeMenuButton) {
+            menuToggle.addEventListener('click', openMenu);
+            closeMenuButton.addEventListener('click', closeMenu);
+            menuLinks.forEach(link => link.addEventListener('click', closeMenu));
+        }
+        // Header Background on Scroll
+        const header = document.querySelector('header');
+        if (header) {
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) { header.classList.add('bg-white/95', 'shadow-md'); header.classList.remove('bg-white/80'); }
+                else { header.classList.remove('bg-white/95', 'shadow-md'); header.classList.add('bg-white/80'); }
+            });
+        }
+        // Fade-in Animation on Scroll
+        const fadeInElements = document.querySelectorAll('.fade-in');
+        if (window.IntersectionObserver) { // Kiểm tra trình duyệt hỗ trợ IntersectionObserver
+            const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
+            const observerCallback = (entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            };
+            const observer = new IntersectionObserver(observerCallback, observerOptions);
+            fadeInElements.forEach(el => observer.observe(el));
+        } else { // Fallback cho trình duyệt cũ không hỗ trợ
+             fadeInElements.forEach(el => el.classList.add('visible'));
+        }
+
+
+        // --- Chatbot Logic ---
+        const toggleChatButton = document.getElementById('toggle-chat-button');
+        // Lấy các phần tử con của chatWidget một cách an toàn hơn
+        const chatHeader = chatWidget?.querySelector('#chat-header');
+        const closeChatButton = chatHeader?.querySelector('#close-chat-button'); // ID này đã được dùng cho nút đóng modal chung, cần đổi ID nút đóng chat
+        const chatBody = chatWidget?.querySelector('#chat-body');
+        const chatInputContainer = chatWidget?.querySelector('#chat-input-container');
+        const chatInput = chatInputContainer?.querySelector('#chat-input');
+        const sendButton = chatInputContainer?.querySelector('#send-button');
+
+        function toggleChat() { chatWidget?.classList.toggle('visible'); }
+        function addChatMessage(message, isUser = false) {
+            if (!chatBody) return;
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message');
+            messageDiv.classList.add(isUser ? 'user-message' : 'bot-message');
+            messageDiv.textContent = message;
+            chatBody.appendChild(messageDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+        function handleSendMessage() {
+            if (!chatInput) return;
+            const userMessage = chatInput.value.trim();
+            if (userMessage) {
+                addChatMessage(userMessage, true);
+                chatInput.value = '';
+                setTimeout(() => {
+                    const botResponse = getBotResponse(userMessage);
+                    addChatMessage(botResponse);
+                }, 1000);
+            }
+        }
+        function getBotResponse(userMessage) { const lowerCaseMessage = userMessage.toLowerCase(); if (lowerCaseMessage.includes('tour') || lowerCaseMessage.includes('chuyến đi')) { return 'Chúng tôi có nhiều tour hấp dẫn như City Tour, Food Tour, Làng nghề... Bạn quan tâm tour nào? Hoặc bạn có thể xem chi tiết tại mục "Tours & Chỗ ở" hoặc để lại thông tin ở mục Liên hệ nhé!'; } else if (lowerCaseMessage.includes('khách sạn') || lowerCaseMessage.includes('chỗ ở') || lowerCaseMessage.includes('nghỉ')) { return 'Hà Nội có đa dạng lựa chọn chỗ ở từ khách sạn cao cấp, boutique hotel đến homestay. Bạn có thể tham khảo gợi ý ở mục "Tours & Chỗ ở" hoặc cho tôi biết ngân sách và khu vực bạn muốn ở?'; } else if (lowerCaseMessage.includes('đặt') || lowerCaseMessage.includes('booking')) { return 'Để đặt tour hoặc cần tư vấn chi tiết, bạn vui lòng để lại thông tin liên hệ ở mục "Liên Hệ & Đặt Tour" hoặc gọi hotline [+84] 123 456 789 nhé!'; } else if (lowerCaseMessage.includes('giá') || lowerCaseMessage.includes('bao nhiêu tiền')) { return 'Giá tour và phòng tùy thuộc vào lựa chọn và thời điểm. Bạn vui lòng xem chi tiết hoặc liên hệ để được báo giá chính xác nhé.'; } else if (lowerCaseMessage.includes('hồ gươm') || lowerCaseMessage.includes('hoàn kiếm')) { return `Hồ Gươm là trái tim Hà Nội. Bạn có thể xem chi tiết tại mục Điểm đến hoặc nhấp vào nút "Xem chi tiết" tại Hồ Gươm.`; } else if (lowerCaseMessage.includes('phố cổ')) { return `Phố Cổ Hà Nội rất đặc trưng với 36 phố phường. Xem thông tin tại mục Văn hóa hoặc nhấp "Xem chi tiết" tại Phố Cổ nhé.`; } else if (lowerCaseMessage.includes('phố đi bộ')) { return `Phố đi bộ quanh Hồ Gươm hoạt động cuối tuần, rất sôi động! Bạn có thể xem thêm thông tin ở mục Điểm đến.`; } else if (lowerCaseMessage.includes('văn miếu')) { return `Văn Miếu - Quốc Tử Giám là trường đại học đầu tiên. Xem thông tin tại mục Văn hóa hoặc nhấp "Xem chi tiết" tại Văn Miếu.`; } else if (lowerCaseMessage.includes('lăng bác') || lowerCaseMessage.includes('lăng chủ tịch')) { return `Lăng Chủ tịch Hồ Chí Minh là nơi an nghỉ của Bác. Xem thông tin tại mục Điểm đến hoặc nhấp "Xem chi tiết" tại Lăng Bác (lưu ý giờ mở cửa và trang phục).`; } else if (lowerCaseMessage.includes('nhà thờ lớn')) { return `Nhà Thờ Lớn có kiến trúc Gothic đẹp. Xem thông tin tại mục Điểm đến hoặc nhấp "Xem chi tiết" tại Nhà Thờ Lớn.`; } else if (lowerCaseMessage.includes('hoàng thành')) { return `Hoàng Thành Thăng Long là di sản thế giới. Xem thông tin tại mục Điểm đến hoặc nhấp "Xem chi tiết" tại Hoàng Thành.`; } else if (lowerCaseMessage.includes('hỏa lò') || lowerCaseMessage.includes('nhà tù')) { return `Di tích Nhà tù Hỏa Lò là chứng tích lịch sử. Xem thông tin tại mục Văn hóa hoặc nhấp "Xem chi tiết" tại Hỏa Lò.`; } else if (lowerCaseMessage.includes('bát tràng') || lowerCaseMessage.includes('làng gốm')) { return `Làng gốm Bát Tràng nổi tiếng đồ thủ công. Xem thông tin tại mục Văn hóa hoặc nhấp "Xem chi tiết" tại Bát Tràng.`; } else if (lowerCaseMessage.includes('ăn gì') || lowerCaseMessage.includes('ẩm thực') || lowerCaseMessage.includes('món ngon')) { return 'Hà Nội là thiên đường ẩm thực! Bạn có thể tham khảo mục "Ẩm thực" trên trang web. Bạn muốn hỏi về món cụ thể nào không? (Ví dụ: phở, bún chả, bún đậu, cốm, cà phê trứng)'; } else if (lowerCaseMessage.includes('phở')) { return 'Phở Hà Nội rất nổi tiếng! Bạn có thể thử Phở Thìn (Lò Đúc) hoặc Phở Bát Đàn. Xem thêm gợi ý ở mục Ẩm thực nhé.'; } else if (lowerCaseMessage.includes('bún chả')) { return 'Bún chả là món đặc sắc. Quán Hương Liên (Obama) hoặc khu Hàng Mành là những gợi ý tốt. Xem thêm ở mục Ẩm thực.'; } else if (lowerCaseMessage.includes('bún đậu') || lowerCaseMessage.includes('mắm tôm')) { return 'Bún đậu mắm tôm là món ăn dân dã hấp dẫn. Bạn có thể tìm các quán nổi tiếng ở Hàng Khay hoặc ngõ Phất Lộc. Xem thêm ở mục Ẩm thực.'; } else if (lowerCaseMessage.includes('cốm') || lowerCaseMessage.includes('com')) { return 'Cốm là đặc sản mùa thu Hà Nội, nổi tiếng nhất là cốm làng Vòng. Bạn có thể tìm mua ở khu Cầu Giấy hoặc các gánh hàng rong vào mùa thu.'; } else if (lowerCaseMessage.includes('cà phê trứng') || lowerCaseMessage.includes('cafe trứng')) { return 'Cà phê trứng rất độc đáo! Hãy thử ở Cafe Giảng (Nguyễn Hữu Huân) hoặc Cafe Đinh (Đinh Tiên Hoàng).'; } else if (lowerCaseMessage.includes('thời tiết')) { return 'Thời tiết Hà Nội có 4 mùa rõ rệt. Mùa thu (tháng 9-11) thường đẹp nhất. Mùa hè (tháng 5-8) nóng ẩm, mùa đông (tháng 12-2) lạnh khô, mùa xuân (tháng 3-4) ấm áp, có mưa phùn.'; } else if (lowerCaseMessage.includes('đi lại') || lowerCaseMessage.includes('di chuyển') || lowerCaseMessage.includes('phương tiện')) { return 'Ở Hà Nội, bạn có thể di chuyển bằng taxi, xe ôm công nghệ (Grab, Gojek), xe buýt hoặc thuê xe máy. Trong khu phố cổ, đi bộ hoặc xích lô là trải nghiệm thú vị.'; } else if (lowerCaseMessage.includes('lịch sử')) { return 'Hà Nội là thủ đô ngàn năm văn hiến với bề dày lịch sử. Bạn có thể tìm hiểu qua các di tích như Hoàng Thành Thăng Long, Văn Miếu, hoặc các bảo tàng.'; } else if (lowerCaseMessage.includes('liên hệ') || lowerCaseMessage.includes('số điện thoại')) { return 'Bạn có thể xem thông tin liên hệ chi tiết ở cuối trang hoặc gọi hotline [+84] 123 456 789 để được hỗ trợ nhanh nhất.'; } else if (lowerCaseMessage.includes('chào') || lowerCaseMessage.includes('hello')) { return 'Chào bạn! Hanoi Travel có thể giúp gì cho kế hoạch khám phá Hà Nội của bạn?'; } else { return 'Xin lỗi, tôi chưa rõ câu hỏi của bạn hoặc thông tin này nằm ngoài phạm vi hỗ trợ của tôi. Tôi có thể giúp bạn về các địa điểm du lịch, ẩm thực, tour, khách sạn tại Hà Nội.'; } }
+        if (toggleChatButton && chatWidget) { toggleChatButton.addEventListener('click', toggleChat); }
+        if (closeChatButton) { closeChatButton.addEventListener('click', toggleChat); } // Sử dụng toggleChat cho nút đóng chat
+        if (sendButton) { sendButton.addEventListener('click', handleSendMessage); }
+        if (chatInput) { chatInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') { handleSendMessage(); } }); }
+
+        // --- Search Functionality ---
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.getElementById('search-button');
+        function performSearch() {
+            const query = searchInput.value.trim().toLowerCase();
+            if (!query) return;
+            const searchableElements = document.querySelectorAll('section h2, section h3, section h4');
+            let found = false;
+            for (const element of searchableElements) {
+                if (element.offsetParent !== null && element.textContent.toLowerCase().includes(query)) {
+                    const targetScrollElement = element.closest('section, .cuisine-card, .bg-white.p-6');
+                    if (targetScrollElement) {
+                        const headerOffset = document.querySelector('header')?.offsetHeight || 70;
+                        const elementPosition = targetScrollElement.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (!found) {
+                alert(`Không tìm thấy kết quả nào cho "${searchInput.value}".`);
+            }
+        }
+        if (searchButton && searchInput) {
+            searchButton.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        }
+
+    }); // Kết thúc DOMContentLoaded
+    </script>
+
+</body>
+</html>
